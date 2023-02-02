@@ -29,6 +29,7 @@ deploy:
       after:
         - name: Import Variables # The name that will be presented in the UI for this step
           use: https://github.com/env0/env0-import-variable-plugin
+          inputs: {}
 
 ```
 1. Configure the Custom Flow above with a new environment or an existing environment

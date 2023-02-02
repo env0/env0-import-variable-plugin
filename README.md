@@ -1,4 +1,4 @@
-# Variable Helper plugin
+# Import Variable plugin
 
 This plugin will fetch output values from another environment and insert them as terraform variables.
 
@@ -27,7 +27,7 @@ deploy:
   steps:
     setupVariables:
       after:
-        - name: Fetch Variables # The name that will be presented in the UI for this step
+        - name: Import Variables # The name that will be presented in the UI for this step
           use: https://github.com/env0/env0-import-variable-plugin
 
 ```

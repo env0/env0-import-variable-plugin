@@ -9,11 +9,9 @@ Similar to self hosted agent secrets, use this notation in the value of the terr
 
 ## Requirements
 
-The ENV0 API KEY and SECRET with access to the target environments.
+The plugin uses the env0 API to fetch the output values from another environment. Therefore, we need to declare the ENV0_API_KEY and ENV0_API_SECRET environment variables in the environment or project with access to the source environments. You can either use [Organization API Keys](https://docs.env0.com/docs/api-keys) or [Personal API Keys](https://docs.env0.com/reference/authentication#creating-a-personal-api-key)
 * `ENV0_API_KEY`
 * `ENV0_API_SECRET` 
-
-The plugin uses the env0 API to fetch the output values from another environment.
 
 ## Inputs
 
@@ -45,4 +43,4 @@ deploy:
 
 ## Further Reading
 
-This plugin takes advantage of [Terraform variable precendence](https://developer.hashicorp.com/terraform/language/values/variables#variable-definition-precedence) and auto.tfvars behavior. 
+This plugin takes advantage of [Terraform variable precendence](https://developer.hashicorp.com/terraform/language/values/variables#variable-definition-precedence) and *.auto.tfvars. 

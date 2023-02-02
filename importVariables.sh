@@ -23,19 +23,17 @@ else
   touch $TFVAR_FILENAME
 fi 
 
-echo ${#KEYS[@]}
+# echo ${#KEYS[@]} # length of array
 
 for ((i = 0; i < LENGTH; i++)); do
-  echo ${KEYS[i]}:${VALUES[i]}
-
   if [[ ${VALUES[i]} =~ ^(\"\$\{env0:) ]]; then
+    echo ${KEYS[i]}:${VALUES[i]}
     # split the string across ':'
     SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n"))
     SOURCE_ENV0_ENVIRONMENT_ID=${SPLIT_VALUES[1]}
     len=$((${#SPLIT_VALUES[2]}-2))
     SOURCE_OUTPUT_NAME=${SPLIT_VALUES[2]:0:$len}
-    echo "need to fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
-
+    echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
 
     # fetch logs from environment
     curl -s --request GET \
@@ -50,8 +48,8 @@ for ((i = 0; i < LENGTH; i++)); do
     
     # store value in .auto.tfvars
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
-    
-    # show updated values
-    cat $TFVAR_FILENAME
   fi
 done
+
+# show updated values
+cat $TFVAR_FILENAME

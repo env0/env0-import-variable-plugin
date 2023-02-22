@@ -23,8 +23,7 @@ else
   touch $TFVAR_FILENAME
 fi 
 
-# echo ${#KEYS[@]} # length of array
-
+# for each variable in env0.auto.tfvars.json 
 for ((i = 0; i < LENGTH; i++)); do
   if [[ ${VALUES[i]} =~ ^(\"\$\{env0:) ]]; then
     echo ${KEYS[i]}:${VALUES[i]}
@@ -36,6 +35,7 @@ for ((i = 0; i < LENGTH; i++)); do
     echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
 
     # fetch logs from environment
+    # TODO: Make it more efficient and not make a second call if the file already exists
     curl -s --request GET \
      --url https://api.env0.com/environments/$SOURCE_ENV0_ENVIRONMENT_ID \
      --header 'accept: application/json' \
@@ -53,3 +53,41 @@ done
 
 # show updated values
 cat $TFVAR_FILENAME
+
+### Repeat process for Environment Variables
+KEYS=($(jq -rc 'keys | .[]' env0.env-vars.json))
+VALUES=($(jq -c '.[]' env0.env-vars.json))
+LENGTH=$(jq 'length' env0.env-vars.json)
+
+# write to ENV0_ENV
+# for each variable in env0.env-vars.json 
+for ((i = 0; i < LENGTH; i++)); do
+  if [[ ${VALUES[i]} =~ ^(\"\$\{env0:) ]]; then
+    echo ${KEYS[i]}:${VALUES[i]}
+    # split the string across ':'
+    SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n"))
+    SOURCE_ENV0_ENVIRONMENT_ID=${SPLIT_VALUES[1]}
+    len=$((${#SPLIT_VALUES[2]}-2))
+    SOURCE_OUTPUT_NAME=${SPLIT_VALUES[2]:0:$len}
+    echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
+
+    # fetch logs from environment
+    curl --request GET \
+      --url 'https://api.env0.com/configuration?organizationId=bde19c6d-d0dc-4b11-a951-8f43fe49db92&environmentId=9cec1eb6-c17f-4cca-9cdf-606a23cdf6b5' \
+      --header 'accept: application/json' \
+      -u $ENV0_API_KEY:$ENV0_API_SECRET \
+      -o $SOURCE_ENV0_ENVIRONMENT_ID.json
+
+    # curl -s --request GET \
+    #   --url https://api.env0.com/environments/$SOURCE_ENV0_ENVIRONMENT_ID \
+    #   --header 'accept: application/json' \
+
+
+    # fetch value from environment 
+    SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_ID.json)
+    #echo $SOURCE_OUTPUT_VALUE
+    
+    # store value in .auto.tfvars
+    echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
+  fi
+done

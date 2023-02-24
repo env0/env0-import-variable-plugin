@@ -59,6 +59,7 @@ KEYS=($(jq -rc 'keys | .[]' env0.env-vars.json))
 VALUES=($(jq -c '.[]' env0.env-vars.json))
 LENGTH=$(jq 'length' env0.env-vars.json)
 
+echo $LENGTH
 # write to ENV0_ENV
 # for each variable in env0.env-vars.json 
 for ((i = 0; i < LENGTH; i++)); do
@@ -72,22 +73,18 @@ for ((i = 0; i < LENGTH; i++)); do
     echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
 
     # fetch logs from environment
-    curl --request GET \
-      --url 'https://api.env0.com/configuration?organizationId=bde19c6d-d0dc-4b11-a951-8f43fe49db92&environmentId=9cec1eb6-c17f-4cca-9cdf-606a23cdf6b5' \
-      --header 'accept: application/json' \
-      -u $ENV0_API_KEY:$ENV0_API_SECRET \
-      -o $SOURCE_ENV0_ENVIRONMENT_ID.json
-
-    # curl -s --request GET \
-    #   --url https://api.env0.com/environments/$SOURCE_ENV0_ENVIRONMENT_ID \
-    #   --header 'accept: application/json' \
-
+    if [[ ! -e $SOURCE_ENV0_ENVIRONMENT_ID.env.json ]]; then
+      curl --request GET \
+        --url "https://api.env0.com/configuration?organizationId=$ENV0_ORGANIZATION_ID&environmentId=$SOURCE_ENV0_ENVIRONMENT_ID" \
+        --header 'accept: application/json' \
+        -u $ENV0_API_KEY:$ENV0_API_SECRET \
+        -o $SOURCE_ENV0_ENVIRONMENT_ID.env.json
+    fi
 
     # fetch value from environment 
-    SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_ID.json)
-    #echo $SOURCE_OUTPUT_VALUE
-    
-    # store value in .auto.tfvars
-    echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
+    SOURCE_OUTPUT_VALUE=$(jq ".[] | select(.name==\"$SOURCE_OUTPUT_NAME\") | .value" $SOURCE_ENV0_ENVIRONMENT_ID.env.json)
+    echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV
   fi
 done
+
+cat $ENV0_ENV

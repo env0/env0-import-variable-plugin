@@ -76,16 +76,17 @@ for ((i = 0; i < LENGTH; i++)); do
     echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
 
     # fetch logs from environment
-    if [[ ! -e $SOURCE_ENV0_ENVIRONMENT_ID.env.json ]]; then
-      curl -s --request GET \
-        --url "https://api.env0.com/configuration?organizationId=$ENV0_ORGANIZATION_ID&environmentId=$SOURCE_ENV0_ENVIRONMENT_ID" \
+      if [[ ! -e $SOURCE_ENV0_ENVIRONMENT_ID.json ]]; then
+        curl -s --request GET \
+        --url https://api.env0.com/environments/$SOURCE_ENV0_ENVIRONMENT_ID \
         --header 'accept: application/json' \
         -u $ENV0_API_KEY:$ENV0_API_SECRET \
-        -o $SOURCE_ENV0_ENVIRONMENT_ID.env.json
-    fi
+        -o $SOURCE_ENV0_ENVIRONMENT_ID.json
+      fi 
 
     # fetch value from environment 
-    SOURCE_OUTPUT_VALUE=$(jq -r ".[] | select(.name==\"$SOURCE_OUTPUT_NAME\") | .value" $SOURCE_ENV0_ENVIRONMENT_ID.env.json)
+    SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_ID.json)
+    #echo $SOURCE_OUTPUT_VALUE
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE"
     # unset ${KEYS[i]}
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV

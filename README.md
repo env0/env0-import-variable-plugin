@@ -1,6 +1,6 @@
 # Import Variable plugin
 
-This plugin will fetch output values from another environment and insert them as terraform variables.
+This plugin will fetch output values from another environment and insert them as terraform and/or environment variables.
 
 
 Similar to self hosted agent secrets, use this notation in the value of the terraform input value:

@@ -7,3 +7,4 @@ deploy:
         - name: Import Variables
           run: |
             ../importVariables.sh
+            cat env1.auto.tfvars

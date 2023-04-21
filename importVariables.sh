@@ -20,6 +20,8 @@ if [[ -e env0.auto.tfvars.json ]]; then
   LENGTH=$(jq 'length' env0.auto.tfvars.json)
 
   if [[ -n $DEBUG ]]; then echo ${VALUES[@]}; fi
+  
+  echo ${VALUES[@]}
 
   TFVAR_FILENAME=env1.auto.tfvars
   if [[ -e $TFVAR_FILENAME ]]; then
@@ -27,8 +29,6 @@ if [[ -e env0.auto.tfvars.json ]]; then
   else 
     touch $TFVAR_FILENAME
   fi 
-
-
 
   # for each variable in env0.auto.tfvars.json 
   for ((i = 0; i < LENGTH; i++)); do

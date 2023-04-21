@@ -13,9 +13,13 @@
 # lexical order, so last file wins!
 if [[ -e env0.auto.tfvars.json ]]; then
 
+  [[ $DEBUG ]] && cat env0.auto.tfvars.json
+
   KEYS=($(jq -rc 'keys | .[]' env0.auto.tfvars.json))
   VALUES=($(jq -c '.[]' env0.auto.tfvars.json))
   LENGTH=$(jq 'length' env0.auto.tfvars.json)
+
+  [[ $DEBUG ]] && echo ${VALUES[@]}
 
   TFVAR_FILENAME=env1.auto.tfvars
   if [[ -e $TFVAR_FILENAME ]]; then
@@ -23,6 +27,8 @@ if [[ -e env0.auto.tfvars.json ]]; then
   else 
     touch $TFVAR_FILENAME
   fi 
+
+
 
   # for each variable in env0.auto.tfvars.json 
   for ((i = 0; i < LENGTH; i++)); do
@@ -107,7 +113,7 @@ for ((i = 0; i < LENGTH; i++)); do
     #echo $SOURCE_OUTPUT_VALUE
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE"
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV
-    
+
   # check for ${env0:environmentname:output}
   elif [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
     echo ${KEYS[i]}:${VALUES[i]}

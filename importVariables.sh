@@ -11,7 +11,6 @@
 
 # https://developer.hashicorp.com/terraform/language/values/variables#variable-definition-precedence
 # lexical order, so last file wins!
-
 if [[ -e env0.auto.tfvars.json ]]; then
 
   KEYS=($(jq -rc 'keys | .[]' env0.auto.tfvars.json))
@@ -27,7 +26,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
 
   # for each variable in env0.auto.tfvars.json 
   for ((i = 0; i < LENGTH; i++)); do
-    if [[ ${VALUES[i]} =~ ^(\"\$\{env0:) ]]; then
+    if [[ ${VALUES[i]} =~ ^\"\$\{env0:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:\S*\}\"$ ]]; then
       echo ${KEYS[i]}:${VALUES[i]}
       # split the string across ':'
       SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n"))
@@ -47,9 +46,27 @@ if [[ -e env0.auto.tfvars.json ]]; then
 
       # fetch value from environment 
       SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_ID.json)
-      #echo $SOURCE_OUTPUT_VALUE
-      
       # store value in .auto.tfvars
+      echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
+      
+    elif [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
+      echo ${KEYS[i]}:${VALUES[i]}
+      SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n")) 
+      SOURCE_ENV0_ENVIRONMENT_NAME=${SPLIT_VALUES[1]}
+      len=$((${#SPLIT_VALUES[2]}-2))
+      SOURCE_OUTPUT_NAME=${SPLIT_VALUES[2]:0:$len}
+      echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_NAME}"
+
+      if [[ ! -e $SOURCE_ENV0_ENVIRONMENT_NAME.json ]]; then
+        curl -s --request GET \
+        --url "https://api.env0.com/environments?organizationId=$ENV0_ORGANIZATION_ID&name=$SOURCE_ENV0_ENVIRONMENT_NAME" \
+        --header 'accept: application/json' \
+        -u $ENV0_API_KEY:$ENV0_API_SECRET \
+        -o $SOURCE_ENV0_ENVIRONMENT_NAME.json
+      fi
+
+      SOURCE_OUTPUT_VALUE=$(jq "[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
+      #echo $SOURCE_OUTPUT_VALUE
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
     fi
   done
@@ -89,8 +106,8 @@ for ((i = 0; i < LENGTH; i++)); do
     SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_ID.json)
     #echo $SOURCE_OUTPUT_VALUE
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE"
-    # unset ${KEYS[i]}
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV
+    
   # check for ${env0:environmentname:output}
   elif [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
     echo ${KEYS[i]}:${VALUES[i]}
@@ -111,7 +128,6 @@ for ((i = 0; i < LENGTH; i++)); do
     SOURCE_OUTPUT_VALUE=$(jq "[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
     #echo $SOURCE_OUTPUT_VALUE
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE"
-    # unset ${KEYS[i]}
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV 
   fi
 done

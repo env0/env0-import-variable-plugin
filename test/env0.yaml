@@ -6,5 +6,5 @@ deploy:
       after:
         - name: Import Variables
           run: |
+            cat env0.auto.tfvars
             ../importVariables.sh
-            cat env1.auto.tfvars

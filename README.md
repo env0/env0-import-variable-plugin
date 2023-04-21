@@ -2,16 +2,21 @@
 
 This plugin will fetch output values from another environment and insert them as terraform and/or environment variables.
 
-
 Similar to self hosted agent secrets, use this notation in the value of the terraform input value:
 
 `${env0:<environment id>:<output name>}`
+`${env0:<environment name>:<output name>}` (see note below about Environment Names restrictions)
 
 ## Requirements
 
 The plugin uses the env0 API to fetch the output values from another environment. Therefore, we need to declare the ENV0_API_KEY and ENV0_API_SECRET environment variables in the environment or project with access to the source environments. You can either use [Organization API Keys](https://docs.env0.com/docs/api-keys) or [Personal API Keys](https://docs.env0.com/reference/authentication#creating-a-personal-api-key)
 * `ENV0_API_KEY`
 * `ENV0_API_SECRET` 
+
+## Environment Name Restrictions
+
+* Environment Names must be unique, otherwise, the script just uses the "first" matching environment name.
+* Environment Names must not include spaces " " or slashes `/`. Ideally, your environment only contains alphanumeric characters and dashes `-`. **
 
 ## Inputs
 
@@ -45,3 +50,6 @@ deploy:
 ## Further Reading
 
 This plugin takes advantage of [Terraform variable precendence](https://developer.hashicorp.com/terraform/language/values/variables#variable-definition-precedence) and *.auto.tfvars. 
+
+
+** If you must know why, it's because this script is written in Bash, and I'm taking advantage of Bash arrays which doesn't process spaces well, and also I'm saving the outputs to the filesystem which gets confused with slashes.

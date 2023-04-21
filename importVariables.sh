@@ -13,15 +13,13 @@
 # lexical order, so last file wins!
 if [[ -e env0.auto.tfvars.json ]]; then
 
-  if [[ -n $DEBUG ]]; then cat env0.auto.tfvars.json; fi
+  [[ -n $DEBUG ]] && cat env0.auto.tfvars.json
 
   KEYS=($(jq -rc 'keys | .[]' env0.auto.tfvars.json))
   VALUES=($(jq -c '.[]' env0.auto.tfvars.json))
   LENGTH=$(jq 'length' env0.auto.tfvars.json)
 
-  if [[ -n $DEBUG ]]; then echo ${VALUES[@]}; fi
-  
-  echo ${VALUES[@]}
+  [[ -n $DEBUG ]] && echo " " && echo "${LENGTH}: ${VALUES[@]}"
 
   TFVAR_FILENAME=env1.auto.tfvars
   if [[ -e $TFVAR_FILENAME ]]; then
@@ -32,8 +30,9 @@ if [[ -e env0.auto.tfvars.json ]]; then
 
   # for each variable in env0.auto.tfvars.json 
   for ((i = 0; i < LENGTH; i++)); do
-    if [[ ${VALUES[i]} =~ ^\"\$\{env0:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:\S*\}\"$ ]]; then
-      echo ${KEYS[i]}:${VALUES[i]}
+    [[ $DEBUG ]] && echo "${i}: ${VALUES[i]}"
+    if [[ ${VALUES[i]} =~ ^\"\$\{env0:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:.*\}\"$ ]]; then
+      echo "${i}: ${KEYS[i]}:${VALUES[i]}"
       # split the string across ':'
       SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n"))
       SOURCE_ENV0_ENVIRONMENT_ID=${SPLIT_VALUES[1]}
@@ -55,7 +54,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
       # store value in .auto.tfvars
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
       
-    elif [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
+    elif [[ ${VALUES[i]} =~ ^\"\$\{env0:.*:.*\}\"$ ]]; then
       echo ${KEYS[i]}:${VALUES[i]}
       SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n")) 
       SOURCE_ENV0_ENVIRONMENT_NAME=${SPLIT_VALUES[1]}
@@ -78,7 +77,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
   done
 
   # show updated values
-  cat $TFVAR_FILENAME
+  if [[ -n DEBUG || -e $TFVAR_$FILENAME ]]; then cat $TFVAR_FILENAME; fi
 fi
 
 ### Repeat process for Environment Variables
@@ -90,7 +89,7 @@ LENGTH=$(jq 'length' env0.env-vars.json)
 # for each variable in env0.env-vars.json 
 for ((i = 0; i < LENGTH; i++)); do
   # check for environment id (UUID) format
-  if [[ ${VALUES[i]} =~ ^\"\$\{env0:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:\S*\}\"$ ]]; then
+  if [[ ${VALUES[i]} =~ ^\"\$\{env0:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:.*\}\"$ ]]; then
     echo ${KEYS[i]}:${VALUES[i]}
     # split the string across ':'
     SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n"))
@@ -115,7 +114,7 @@ for ((i = 0; i < LENGTH; i++)); do
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV
 
   # check for ${env0:environmentname:output}
-  elif [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
+  elif [[ ${VALUES[i]} =~ ^(\"\$\{env0:.*:.*\}\")$ ]]; then
     echo ${KEYS[i]}:${VALUES[i]}
     SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n")) 
     SOURCE_ENV0_ENVIRONMENT_NAME=${SPLIT_VALUES[1]}

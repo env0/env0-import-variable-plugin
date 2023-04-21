@@ -6,6 +6,5 @@ deploy:
       after:
         - name: Import Variables
           run: |
-            cat env0.auto.tfvars.json
             export DEBUG=1
             ../importVariables.sh

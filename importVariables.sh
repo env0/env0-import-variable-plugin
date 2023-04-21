@@ -13,13 +13,13 @@
 # lexical order, so last file wins!
 if [[ -e env0.auto.tfvars.json ]]; then
 
-  [[ -n $DEBUG ]] && cat env0.auto.tfvars.json
+  if [[ -n $DEBUG ]]; then cat env0.auto.tfvars.json; fi
 
   KEYS=($(jq -rc 'keys | .[]' env0.auto.tfvars.json))
   VALUES=($(jq -c '.[]' env0.auto.tfvars.json))
   LENGTH=$(jq 'length' env0.auto.tfvars.json)
 
-  [[ -n $DEBUG ]] && echo ${VALUES[@]}
+  if [[ -n $DEBUG ]]; then echo ${VALUES[@]}; fi
 
   TFVAR_FILENAME=env1.auto.tfvars
   if [[ -e $TFVAR_FILENAME ]]; then

@@ -92,7 +92,7 @@ for ((i = 0; i < LENGTH; i++)); do
     # unset ${KEYS[i]}
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV
   # check for ${env0:environmentname:output}
-  else if [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
+  elif [[ ${VALUES[i]} =~ ^\"\$\{env0:[\S ]*:\S*\}\"$ ]]; then
     echo ${KEYS[i]}:${VALUES[i]}
     SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n")) 
     SOURCE_ENV0_ENVIRONMENT_NAME=${SPLIT_VALUES[1]}

@@ -2,11 +2,11 @@ resource "null_resource" "null" {
 }
 
 output "test_envid" {
-  value = var.test_input
+  value = var.test_envid
 }
 
 output "test_envname" {
-  value = var.test_input
+  value = var.test_envname
 }
 
 variable "test_envid" {

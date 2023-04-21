@@ -1,3 +1,3 @@
 output "time" {
-  value = > timestamp()
+  value = timestamp()
 }

@@ -12,5 +12,5 @@ deploy:
       after:
         - name: Test Outputs
           run: |
-            echo $ENV0_ENV
+            export | grep -i "env"
             cat env1.auto.tfvars

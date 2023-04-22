@@ -1,0 +1,3 @@
+output "time" {
+  value = timestamp()
+}

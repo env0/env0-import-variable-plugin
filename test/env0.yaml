@@ -8,3 +8,9 @@ deploy:
           run: |
             export DEBUG=1
             ../importVariables.sh
+    terraformOutput:
+      after:
+        - name: Test Outputs
+          run: |
+            echo $ENV0_ENV
+            cat env1.auto.tfvars

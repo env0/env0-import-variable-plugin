@@ -30,15 +30,15 @@ if [[ -e env0.auto.tfvars.json ]]; then
 
   # for each variable in env0.auto.tfvars.json 
   for ((i = 0; i < LENGTH; i++)); do
-    [[ $DEBUG ]] && echo "${i}: ${VALUES[i]}"
+    #[[ $DEBUG ]] && echo "${i}: ${VALUES[i]}"
     if [[ ${VALUES[i]} =~ ^\"\$\{env0:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:.*\}\"$ ]]; then
-      echo "${i}: ${KEYS[i]}:${VALUES[i]}"
+      #[[ $DEBUG ]] && echo "${i}: ${KEYS[i]}:${VALUES[i]}"
       # split the string across ':'
       SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n"))
       SOURCE_ENV0_ENVIRONMENT_ID=${SPLIT_VALUES[1]}
       len=$((${#SPLIT_VALUES[2]}-2))
       SOURCE_OUTPUT_NAME=${SPLIT_VALUES[2]:0:$len}
-      echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
+      [[ $DEBUG ]] && echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_ID}"
 
       # fetch logs from environment
       if [[ ! -e $SOURCE_ENV0_ENVIRONMENT_ID.json ]]; then
@@ -55,7 +55,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
       
     elif [[ ${VALUES[i]} =~ ^\"\$\{env0:.*:.*\}\"$ ]]; then
-      echo ${KEYS[i]}:${VALUES[i]}
+      #[[ $DEBUG ]] && echo ${KEYS[i]}:${VALUES[i]}
       SPLIT_VALUES=($(echo ${VALUES[i]} | tr ":" "\n")) 
       SOURCE_ENV0_ENVIRONMENT_NAME=${SPLIT_VALUES[1]}
       len=$((${#SPLIT_VALUES[2]}-2))
@@ -70,14 +70,14 @@ if [[ -e env0.auto.tfvars.json ]]; then
         -o $SOURCE_ENV0_ENVIRONMENT_NAME.json
       fi
 
-      SOURCE_OUTPUT_VALUE=$(jq "[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
+      SOURCE_OUTPUT_VALUE=$(jq ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
       #echo $SOURCE_OUTPUT_VALUE
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
     fi
   done
 
   # show updated values
-  if [[ -n DEBUG || -e $TFVAR_$FILENAME ]]; then cat $TFVAR_FILENAME; fi
+  [[ -n $DEBUG || -e $TFVAR_$FILENAME ]] && cat $TFVAR_FILENAME
 fi
 
 ### Repeat process for Environment Variables
@@ -130,7 +130,7 @@ for ((i = 0; i < LENGTH; i++)); do
       -o $SOURCE_ENV0_ENVIRONMENT_NAME.json
     fi
 
-    SOURCE_OUTPUT_VALUE=$(jq "[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
+    SOURCE_OUTPUT_VALUE=$(jq ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
     #echo $SOURCE_OUTPUT_VALUE
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE"
     echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $ENV0_ENV 

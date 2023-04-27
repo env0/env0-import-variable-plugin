@@ -10,6 +10,6 @@ output "time_json" {
   value = jsonencode({ "time" : local.time })
 }
 
-output "time_multiline" {
+output "test_multiline" {
   value = "This last ran on:\r\n${local.time}"
 }

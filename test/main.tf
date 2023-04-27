@@ -10,11 +10,11 @@ output "test_envname" {
 }
 
 output "test_json" {
-  value = jsonencode({"time"=var.test_envname})
+  value = var.test_json
 }
 
-output "test_multiline" {
-  value = "ab\r\ncd\r\n\ef"
+output "test_multline" {
+  value = var.test_multline
 }
 
 variable "test_envid" {
@@ -25,3 +25,10 @@ variable "test_envname" {
   type = string
 }
 
+variable "test_json" {
+  type = object
+}
+
+variable "test_multline" {
+  type = string
+}

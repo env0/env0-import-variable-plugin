@@ -3,7 +3,7 @@ output "time" {
 }
 
 output "time_json" {
-  value = jsonencode ({"time": output.time.value })
+  value = jsonencode({ "time" : output.time.value })
 }
 
 output "time_multiline" {

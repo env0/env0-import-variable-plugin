@@ -14,7 +14,7 @@ output "test_json" {
 }
 
 output "test_multiline" {
-  value = var.test_multline
+  value = var.test_multiline
 }
 
 variable "test_envid" {

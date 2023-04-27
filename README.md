@@ -4,8 +4,11 @@ This plugin will fetch output values from another environment and insert them as
 
 Similar to self hosted agent secrets, use this notation in the value of the terraform input value:
 
-`${env0:<environment id>:<output name>}`
-`${env0:<environment name>:<output name>}` (see note below about Environment Names restrictions)
+* `${env0:<environment id>:<output name>}`
+* `${env0:<environment name>:<output name>}` (see note below about Environment Names restrictions)
+
+For fetching JSON output values - make sure you select JSON type for your input variable, and in the value use the following JSON schema.
+* `{"ENV0_ENVIRONMENT_NAME":<environment name>, "output": <output name>}` 
 
 ## Requirements
 

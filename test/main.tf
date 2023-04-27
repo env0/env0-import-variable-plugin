@@ -26,7 +26,7 @@ variable "test_envname" {
 }
 
 variable "test_json" {
-  type = object
+  type = map
 }
 
 variable "test_multline" {

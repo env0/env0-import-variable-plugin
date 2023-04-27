@@ -76,7 +76,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
     
     elif [[ ${VALUES[i]} =~ ^\{\"ENV0_ENVIRONMENT_NAME\".*\"output\".*\}$ ]]; then  # {"EnvironmentName":"env0-import-variable-plugin-test-data","output":"time_json"}
-      echo "json match"
+      #echo "json match"
       SOURCE_ENV0_ENVIRONMENT_NAME=$(echo ${VALUES[i]} | jq -r ".ENV0_ENVIRONMENT_NAME")
       SOURCE_OUTPUT_NAME=$(echo ${VALUES[i]} | jq -r ".output")
 
@@ -90,7 +90,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
         -o $SOURCE_ENV0_ENVIRONMENT_NAME.json
       fi
 
-      SOURCE_OUTPUT_VALUE=$(jq ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value | tostring" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
+      SOURCE_OUTPUT_VALUE=$(jq -rc ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
       #echo $SOURCE_OUTPUT_VALUE
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
     fi

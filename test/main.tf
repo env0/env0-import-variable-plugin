@@ -13,7 +13,7 @@ output "test_json" {
   value = var.test_json
 }
 
-output "test_multline" {
+output "test_multiline" {
   value = var.test_multline
 }
 
@@ -29,6 +29,6 @@ variable "test_json" {
   type = map
 }
 
-variable "test_multline" {
+variable "test_multiline" {
   type = string
 }

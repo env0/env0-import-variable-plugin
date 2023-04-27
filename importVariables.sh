@@ -15,7 +15,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
 
   [[ -n $DEBUG ]] && cat env0.auto.tfvars.json
 
-  KEYS=($(jq -c 'keys | .[]' env0.auto.tfvars.json))
+  KEYS=($(jq -rc 'keys | .[]' env0.auto.tfvars.json))
   VALUES=($(jq -c '.[]' env0.auto.tfvars.json))
   LENGTH=$(jq 'length' env0.auto.tfvars.json)
 

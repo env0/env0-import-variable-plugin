@@ -19,6 +19,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
   VALUES=($(jq -c '.[]' env0.auto.tfvars.json))
   LENGTH=$(jq 'length' env0.auto.tfvars.json)
 
+  [[ -n $DEBUG ]] && echo " " && echo "${LENGTH}: ${KEYS[@]}"
   [[ -n $DEBUG ]] && echo " " && echo "${LENGTH}: ${VALUES[@]}"
 
   TFVAR_FILENAME=env1.auto.tfvars
@@ -50,7 +51,7 @@ if [[ -e env0.auto.tfvars.json ]]; then
       fi 
 
       # fetch value from environment 
-      SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_ID.json)
+      SOURCE_OUTPUT_VALUE=$(jq ".latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value | tostring" $SOURCE_ENV0_ENVIRONMENT_ID.json)
       # store value in .auto.tfvars
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
       
@@ -70,7 +71,26 @@ if [[ -e env0.auto.tfvars.json ]]; then
         -o $SOURCE_ENV0_ENVIRONMENT_NAME.json
       fi
 
-      SOURCE_OUTPUT_VALUE=$(jq ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
+      SOURCE_OUTPUT_VALUE=$(jq ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value | tostring" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
+      #echo $SOURCE_OUTPUT_VALUE
+      echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
+    
+    elif [[ ${VALUES[i]} =~ ^\{\"ENV0_ENVIRONMENT_NAME\".*\"output\".*\}$ ]]; then  # {"EnvironmentName":"env0-import-variable-plugin-test-data","output":"time_json"}
+      #echo "json match"
+      SOURCE_ENV0_ENVIRONMENT_NAME=$(echo ${VALUES[i]} | jq -r ".ENV0_ENVIRONMENT_NAME")
+      SOURCE_OUTPUT_NAME=$(echo ${VALUES[i]} | jq -r ".output")
+
+      echo "fetch value for ${KEYS[i]}:$SOURCE_OUTPUT_NAME from ${SOURCE_ENV0_ENVIRONMENT_NAME}"
+
+      if [[ ! -e $SOURCE_ENV0_ENVIRONMENT_NAME.json ]]; then
+        curl -s --request GET \
+        --url "https://api.env0.com/environments?organizationId=$ENV0_ORGANIZATION_ID&name=$SOURCE_ENV0_ENVIRONMENT_NAME" \
+        --header 'accept: application/json' \
+        -u $ENV0_API_KEY:$ENV0_API_SECRET \
+        -o $SOURCE_ENV0_ENVIRONMENT_NAME.json
+      fi
+
+      SOURCE_OUTPUT_VALUE=$(jq -rc ".[0].latestDeploymentLog.output.$SOURCE_OUTPUT_NAME.value" $SOURCE_ENV0_ENVIRONMENT_NAME.json)
       #echo $SOURCE_OUTPUT_VALUE
       echo "${KEYS[i]}=$SOURCE_OUTPUT_VALUE" >> $TFVAR_FILENAME
     fi

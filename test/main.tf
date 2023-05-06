@@ -9,10 +9,26 @@ output "test_envname" {
   value = var.test_envname
 }
 
+output "test_json" {
+  value = var.test_json
+}
+
+output "test_multiline" {
+  value = var.test_multiline
+}
+
 variable "test_envid" {
   type = string
 }
 
 variable "test_envname" {
+  type = string
+}
+
+variable "test_json" {
+  type = map
+}
+
+variable "test_multiline" {
   type = string
 }

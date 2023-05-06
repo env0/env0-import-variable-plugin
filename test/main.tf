@@ -10,6 +10,7 @@ output "test_envname" {
 }
 
 output "test_json" {
+  type = map
   value = var.test_json
 }
 

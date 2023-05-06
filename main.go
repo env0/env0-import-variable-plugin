@@ -29,6 +29,7 @@ type env0VariableToImport struct {
 	ENV0_ENVIRONMENT_NAME string
 	OutputKey             string
 	OutputValue           string
+	OutputType            string
 }
 
 type environmentLog struct {
@@ -67,8 +68,6 @@ func getEnvs(env *env0Settings) {
 
 func updateEnvironmentIdFromName(index int, importVars []env0VariableToImport) {
 	// importVars[index].ENV0_ENVIRONMENT_NAME
-	log.Println(env0EnvVars.ENV0_API_KEY + ":" + env0EnvVars.ENV0_API_SECRET)
-	log.Println(APIKEYSECRET_ENCODED)
 	// log.Println("https://api.env0.com/environments?organizationId=" + env0EnvVars.ENV0_ORGANIZATION_ID + "&name=" + importVars[index].ENV0_ENVIRONMENT_NAME)
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments?organizationId="+env0EnvVars.ENV0_ORGANIZATION_ID+"&name="+importVars[index].ENV0_ENVIRONMENT_NAME, nil)
 	req.Header.Set("Authorization", "Basic "+APIKEYSECRET_ENCODED)
@@ -132,7 +131,7 @@ func main() {
 			var jsonRef env0JSONVarByName
 			err = json.Unmarshal(v, &jsonRef)
 			log.Printf(" parsed value: %s, %s\n", jsonRef.ENV0_ENVIRONMENT_NAME, jsonRef.Output)
-			importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: jsonRef.ENV0_ENVIRONMENT_NAME, OutputKey: jsonRef.Output})
+			importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: jsonRef.ENV0_ENVIRONMENT_NAME, OutputKey: jsonRef.Output, OutputType: "json"})
 		case "\"$":
 			log.Printf("found match: key: %s value: %s\n", k, v)
 			s := strings.Split(string(v), ":")
@@ -142,9 +141,9 @@ func main() {
 				log.Fatalln("non matching regex: ", err)
 			}
 			if matched {
-				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_ID: s[1], OutputKey: s[2][:len(s[2])-2]})
+				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_ID: s[1], OutputKey: s[2][:len(s[2])-2], OutputType: "string"})
 			} else {
-				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: s[1], OutputKey: s[2][:len(s[2])-2]})
+				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: s[1], OutputKey: s[2][:len(s[2])-2], OutputType: "string"})
 			}
 		default:
 			log.Printf("ignoring key: %s, value: %s\n", k, v[0:2])
@@ -153,13 +152,23 @@ func main() {
 
 	log.Println("call API to fetch environments by ID or by name")
 
-	OutputTFVarsJson := make(map[string]string)
+	OutputTFVarsJson := make(map[string]interface{})
 
 	for k, v := range importVars {
 		if v.ENV0_ENVIRONMENT_ID == "" {
 			updateEnvironmentIdFromName(k, importVars)
 		}
-		OutputTFVarsJson[importVars[k].OutputKey] = importVars[k].OutputValue
+		switch importVars[k].OutputType {
+		case "json":
+			log.Println("\tConverting output value: ", importVars[k].OutputValue)
+			jsonOutput := json.RawMessage(importVars[k].OutputValue)
+			o, _ := json.Marshal(&jsonOutput)
+			log.Println("\t\tjsonOutput: ", string(o))
+			// //o, _ := strconv.Unquote(importVars[k].OutputValue)
+			OutputTFVarsJson[importVars[k].OutputKey] = json.RawMessage(o)
+		default:
+			OutputTFVarsJson[importVars[k].OutputKey] = importVars[k].OutputValue
+		}
 	}
 
 	log.Println("ImportVars: ", importVars)
@@ -168,7 +177,7 @@ func main() {
 
 	log.Println("parse for outputs and save/Marshall outputs")
 
-	fo, err := json.Marshal(OutputTFVarsJson)
+	fo, err := json.Marshal(&OutputTFVarsJson)
 	if err != nil {
 		log.Fatal(err)
 	}

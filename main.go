@@ -160,12 +160,7 @@ func main() {
 		}
 		switch importVars[k].OutputType {
 		case "json":
-			log.Println("\tConverting output value: ", importVars[k].OutputValue)
-			jsonOutput := json.RawMessage(importVars[k].OutputValue)
-			o, _ := json.Marshal(&jsonOutput)
-			log.Println("\t\tjsonOutput: ", string(o))
-			// //o, _ := strconv.Unquote(importVars[k].OutputValue)
-			OutputTFVarsJson[importVars[k].OutputKey] = json.RawMessage(o)
+			OutputTFVarsJson[importVars[k].OutputKey] = json.RawMessage(importVars[k].OutputValue)
 		default:
 			OutputTFVarsJson[importVars[k].OutputKey] = importVars[k].OutputValue
 		}

@@ -76,6 +76,7 @@ func updateEnvironmentIdFromName(index int, importVars []env0VariableToImport) {
 	// log.Println(resp, err)
 	// log.Println(resp.Body)
 
+	// TODO: Make environmentLogs a map, and check for existing logs.
 	var environmentLog []environmentLog
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&environmentLog)
@@ -122,6 +123,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Println("parse tfvars for matching regex patterns")
+
 	for k, v := range env0TfVars {
 		switch string(v[0:2]) {
 		case "{\"":
@@ -148,19 +151,32 @@ func main() {
 		}
 	}
 
+	log.Println("call API to fetch environments by ID or by name")
+
+	OutputTFVarsJson := make(map[string]string)
+
 	for k, v := range importVars {
 		if v.ENV0_ENVIRONMENT_ID == "" {
 			updateEnvironmentIdFromName(k, importVars)
 		}
+		OutputTFVarsJson[importVars[k].OutputKey] = importVars[k].OutputValue
 	}
 
-	log.Println("parse tfvars for matching regex patterns")
+	log.Println("ImportVars: ", importVars)
 
-	log.Println("call API to fetch environments by ID or by name")
-
-	log.Println(importVars)
+	log.Println("OutputVars: ", OutputTFVarsJson)
 
 	log.Println("parse for outputs and save/Marshall outputs")
+
+	fo, err := json.Marshal(OutputTFVarsJson)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.WriteFile("env1.auto.tfvars.json", fo, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	log.Println("Done")
 }

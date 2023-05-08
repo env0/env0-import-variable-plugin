@@ -1,0 +1,9 @@
+environments:
+  parent: 
+    name: 'Parent'
+    templateName: 'plugin-test-workflow-parent'
+  child:
+    name: 'Child'
+    templateName: 'plugin-test-workflow-child'
+    needs:
+      - parent

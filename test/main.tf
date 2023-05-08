@@ -43,8 +43,10 @@ variable "test_multiline" {
 
 variable "test_workflow" {
   type = string
+  default = ""
 }
 
 variable "test_workflow_json" {
   type = map
+  default = {}
 }

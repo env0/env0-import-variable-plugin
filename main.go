@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -44,9 +45,9 @@ type environmentLog struct {
 }
 
 type tfVars struct {
-	Sensitive bool   `json:"sensitive"`
-	Type      string `json:"type"`
-	Value     string `json:"value"`
+	Sensitive bool        `json:"sensitive"`
+	Type      interface{} `json:"type"`
+	Value     interface{} `json:"value"`
 }
 
 type workflowLog struct {
@@ -104,8 +105,13 @@ func updateByName(index int, importVars []env0VariableToImport) {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
-		log.Println("\tOutput Value: " + environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
-		importVars[index].OutputValue = environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value
+		switch environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Type.(type) {
+		case string:
+			log.Printf("\tString type: Output Value: %v\n", environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
+		case json.RawMessage:
+			log.Printf("\tJSON type: Output Value: %v\n", environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
+		}
+		importVars[index].OutputValue = fmt.Sprint(environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
 		importVars[index].ENV0_ENVIRONMENT_ID = environmentLog[0].Id
 	}
 }
@@ -126,8 +132,13 @@ func updateById(index int, importVars []env0VariableToImport) {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
-		log.Println("\tOutput Value: " + environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
-		importVars[index].OutputValue = environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value
+		switch environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Type.(type) {
+		case string:
+			log.Printf("\tString type: Output Value: %v\n", environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
+		case json.RawMessage:
+			log.Printf("\tJSON type: Output Value: %v\n", environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
+		}
+		importVars[index].OutputValue = fmt.Sprint(environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
 		importVars[index].ENV0_ENVIRONMENT_NAME = environmentLog.Name
 	}
 }
@@ -210,11 +221,16 @@ func main() {
 	for k, v := range env0TfVars {
 		switch string(v[0:2]) {
 		case "{\"":
-			log.Printf("key: %s, need to parse json: %s\n", k, v)
+			log.Printf("found json: %s, need to parse: %s\n", k, v)
 			var jsonRef env0JSONVarByName
 			err = json.Unmarshal(v, &jsonRef)
 			log.Printf(" parsed value: name: %s, parent: %s, output: %s\n", jsonRef.ENV0_ENVIRONMENT_NAME, jsonRef.ENV0_WORKFLOW_PARENT, jsonRef.Output)
-			importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: jsonRef.ENV0_ENVIRONMENT_NAME, OutputKey: jsonRef.Output, OutputType: "json"})
+			if jsonRef.ENV0_WORKFLOW_PARENT != "" {
+				parentEnvId := getEnvironmentIdOfParent(jsonRef.ENV0_WORKFLOW_PARENT)
+				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_ID: parentEnvId, OutputKey: jsonRef.Output, OutputType: "json"})
+			} else {
+				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: jsonRef.ENV0_ENVIRONMENT_NAME, OutputKey: jsonRef.Output, OutputType: "json"})
+			}
 		case "\"$":
 			log.Printf("found match: key: %s value: %s\n", k, v)
 			s := strings.Split(string(v), ":")

@@ -17,6 +17,14 @@ output "test_multiline" {
   value = var.test_multiline
 }
 
+output "test_workflow" {
+  value = var.test_workflow
+}
+
+output "test_workflow_json" {
+  value = var.test_workflow_json
+}
+
 variable "test_envid" {
   type = string
 }
@@ -31,4 +39,12 @@ variable "test_json" {
 
 variable "test_multiline" {
   type = string
+}
+
+variable "test_workflow" {
+  type = string
+}
+
+variable "test_workflow_json" {
+  type = map
 }

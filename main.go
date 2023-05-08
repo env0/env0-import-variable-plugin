@@ -19,6 +19,7 @@ type env0Settings struct {
 	ENV0_ORGANIZATION_ID string
 	ENV0_API_KEY         string
 	ENV0_API_SECRET      string
+	ENV0_ENVIRONMENT_ID  string
 }
 
 var env0EnvVars env0Settings
@@ -33,9 +34,10 @@ type env0VariableToImport struct {
 }
 
 type environmentLog struct {
-	Id                  string        `json:"id"`
-	Name                string        `json:"name"`
-	LatestDeploymentLog deploymentLog `json:"latestDeploymentLog"`
+	Id                    string        `json:"id"`
+	Name                  string        `json:"name"`
+	WorkflowEnvironmentId string        `json:"workflowEnvironmentId"`
+	LatestDeploymentLog   deploymentLog `json:"latestDeploymentLog"`
 }
 
 type deploymentLog struct {
@@ -49,7 +51,15 @@ type tfVars struct {
 	Value     string `json:"value"`
 }
 
-type workflowFile interface{}
+type workflowFile struct {
+	Environments map[string]workflowEnvironment
+}
+
+type workflowEnvironment struct {
+	Name          string `json:"name"`
+	EnvironmentId string `json:"environmentId"`
+	TemplateType  string `json:"templateType"`
+}
 
 var client *http.Client
 
@@ -63,6 +73,7 @@ func getEnvs(env *env0Settings) {
 	env.ENV0_API_KEY = os.Getenv("ENV0_API_KEY")
 	env.ENV0_API_SECRET = os.Getenv("ENV0_API_SECRET")
 	env.ENV0_ORGANIZATION_ID = os.Getenv(("ENV0_ORGANIZATION_ID"))
+	env.ENV0_ENVIRONMENT_ID = os.Getenv("ENV0_ENVIRONMENT_ID")
 	APIKEYSECRET_ENCODED = base64.StdEncoding.EncodeToString([]byte(env0EnvVars.ENV0_API_KEY + ":" + env0EnvVars.ENV0_API_SECRET))
 }
 
@@ -87,6 +98,13 @@ func updateEnvironmentIdFromName(index int, importVars []env0VariableToImport) {
 		importVars[index].OutputValue = environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value
 		importVars[index].ENV0_ENVIRONMENT_ID = environmentLog[0].Id
 	}
+}
+
+func processWorklow(parentName string, outputVariableName string) {
+
+	// get workflow envID
+	// get parent envID from workflow log
+	// get output
 }
 
 /*
@@ -136,11 +154,17 @@ func main() {
 			log.Printf("found match: key: %s value: %s\n", k, v)
 			s := strings.Split(string(v), ":")
 			log.Printf(" parsed value: %s, %s\n", s[1], s[2][:(len(s[2])-2)])
-			matched, err := regexp.MatchString(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`, s[1])
+			matchWorkflow, err := regexp.MatchString(`^env0-workflow$`, s[0])
+			if matchWorkflow {
+				log.Println("\tFetch Worfklow variable from: " + s[1] + " output: " + s[2][:len(s[2])-2])
+				processWorklow()
+				continue
+			}
+			matchedbyid, err := regexp.MatchString(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`, s[1])
 			if err != nil {
 				log.Fatalln("non matching regex: ", err)
 			}
-			if matched {
+			if matchedbyid {
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_ID: s[1], OutputKey: s[2][:len(s[2])-2], OutputType: "string"})
 			} else {
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: s[1], OutputKey: s[2][:len(s[2])-2], OutputType: "string"})

@@ -10,6 +10,30 @@ Similar to self hosted agent secrets, use this notation in the value of the terr
 For fetching JSON output values - make sure you select JSON type for your input variable, and in the value use the following JSON schema.
 * `{"ENV0_ENVIRONMENT_NAME":<environment name>, "output": <output name>}` 
 
+## Workflows
+
+When using the plugin within a workflow you can use the following notation:
+
+string types: `${env0-workflow:<parent name>:<output name>}`
+json types: `{"ENV0_WORKFLOW_PARENT":<parent name>, "output": <output name>}`
+
+In this case, the parent name is the yaml parent, not the "environment name." 
+For example, given the following `env0.workflow.yaml` the variable structure to fetch the "vpc-id" from the "parent vpc" would be `${env0-workflow:vpc:vpc-id}`
+Similarly, to fetch the tags (in json) from the vpc: `{"ENV0_WORKFLOW_PARENT":vpc, "output": tags}`
+
+```
+environments:
+  vpc: 
+    name: 'My VPC'
+    templateName: 'vpc-template'
+  subnet:
+    name: 'My Subnets'
+    templateName: 'subnet-template'
+    needs:
+      - vpc
+
+```
+
 ## Requirements
 
 The plugin uses the env0 API to fetch the output values from another environment. Therefore, we need to declare the ENV0_API_KEY and ENV0_API_SECRET environment variables in the environment or project with access to the source environments. You can either use [Organization API Keys](https://docs.env0.com/docs/api-keys) or [Personal API Keys](https://docs.env0.com/reference/authentication#creating-a-personal-api-key)
@@ -36,7 +60,7 @@ deploy:
     setupVariables:
       after:
         - name: Import Variables # The name that will be presented in the UI for this step
-          use: https://github.com/env0/env0-import-variable-plugin
+          use: https://github.com/env0/env0-import-variable-plugin@0.3.0-pre
           inputs: {}
 
 ```

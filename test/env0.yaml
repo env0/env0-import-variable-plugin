@@ -11,4 +11,4 @@ deploy:
         - name: Test Outputs
           run: |
             export | grep -i "env"
-            cat env1.auto.tfvars
+            cat env1.auto.tfvars.json

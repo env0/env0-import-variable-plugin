@@ -160,9 +160,9 @@ func main() {
 		}
 		switch importVars[k].OutputType {
 		case "json":
-			OutputTFVarsJson[importVars[k].OutputKey] = json.RawMessage(importVars[k].OutputValue)
+			OutputTFVarsJson[importVars[k].InputKey] = json.RawMessage(importVars[k].OutputValue)
 		default:
-			OutputTFVarsJson[importVars[k].OutputKey] = importVars[k].OutputValue
+			OutputTFVarsJson[importVars[k].InputKey] = importVars[k].OutputValue
 		}
 	}
 

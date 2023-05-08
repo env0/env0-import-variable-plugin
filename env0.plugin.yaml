@@ -4,4 +4,4 @@ inputs: {}
 run:
   exec: |
     sudo apk add go
-    go run $ENV0_PLUGIN_PATH/.
+    go run $ENV0_PLUGIN_PATH

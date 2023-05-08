@@ -49,7 +49,7 @@ type tfVars struct {
 	Value     string `json:"value"`
 }
 
-type workflowFile any
+type workflowFile interface{}
 
 var client *http.Client
 

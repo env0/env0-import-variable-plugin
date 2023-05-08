@@ -4,4 +4,5 @@ inputs: {}
 run:
   exec: |
     sudo apk add go
-    go run $ENV0_PLUGIN_PATH
+    git clone -b feat-golang --single-branch https://github.com/env0/env0-import-variable-plugin
+    go run env0-import-variabble-plugin/.

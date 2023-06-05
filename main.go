@@ -11,23 +11,25 @@ import (
 	"strings"
 )
 
+// env0JSONVarByName is the data structure in JSON format to pull JSON output.
+// UI restricts JSON input so the input would look something like: `{"ENV0_ENVIRONMENT_NAME":"my-vpc-environment", "Output":"my-vpc-id"}`
+// OR for Workflows it would look like this: `{"ENV0_WORKFLOW_PARENT": "vpc", "Output": "my-vpc-id"}`
 type env0JSONVarByName struct {
 	ENV0_ENVIRONMENT_NAME string
 	ENV0_WORKFLOW_PARENT  string
 	Output                string
 }
 
+// env0Settings are used to pull and store the environment variables defined in the runner
 type env0Settings struct {
 	ENV0_ORGANIZATION_ID string
 	ENV0_API_KEY         string
 	ENV0_API_SECRET      string
 	ENV0_ENVIRONMENT_ID  string
+	APIKEYSECRET_ENCODED string // from TF_TOKEN_backend_api_env0_com
 }
 
-var env0EnvVars env0Settings
-
-var importVars []env0VariableToImport
-
+// env0VariableToImport is a data structure to save what variable(s) needs to be fetched / imported.
 type env0VariableToImport struct {
 	InputKey              string
 	ENV0_ENVIRONMENT_ID   string
@@ -37,19 +39,15 @@ type env0VariableToImport struct {
 	OutputType            string
 }
 
-type environmentLog struct {
-	Id                    string        `json:"id"`
-	Name                  string        `json:"name"`
-	WorkflowEnvironmentId string        `json:"workflowEnvironmentId"`
-	LatestDeploymentLog   deploymentLog `json:"latestDeploymentLog"`
-}
-
+// --- Data Structure for Logs
+// tfVars - data structure for a Terraform Variable in the DeploymentLog
 type tfVars struct {
 	Sensitive bool        `json:"sensitive"`
 	Type      interface{} `json:"type"`
 	Value     interface{} `json:"value"`
 }
 
+// workflowLog - data structure for a workflow in the DeploymentLog
 type workflowLog struct {
 	Id                    string        `json:"id"`
 	Name                  string        `json:"name"`
@@ -57,42 +55,51 @@ type workflowLog struct {
 	LatestDeploymentLog   deploymentLog `json:"latestDeploymentLog"`
 }
 
+// deploymentLog - data structure for a deployment inside the EnvironmentLog
 type deploymentLog struct {
 	Output       map[string]tfVars `json:"output"`
 	WorkflowFile workflowFile      `json:"workflowFile"`
 }
 
-type workflowFile struct {
-	Environments map[string]workflowEnvironment `json:"environments"`
+// environmentLog - data structure for environmentLog
+type environmentLog struct {
+	Id                    string        `json:"id"`
+	Name                  string        `json:"name"`
+	WorkflowEnvironmentId string        `json:"workflowEnvironmentId"`
+	LatestDeploymentLog   deploymentLog `json:"latestDeploymentLog"`
 }
 
+// --- Data Structure for Workflows ---
+// workflowEnvironment - data structure for subEnvironments in a Workflow
 type workflowEnvironment struct {
 	Name          string `json:"name"`
 	TemplateType  string `json:"templateType"`
 	EnvironmentId string `json:"environmentId"`
 }
 
-var client *http.Client
-
-func newHttpClient() *http.Client {
-	return &http.Client{}
+// workflowFile - data structure for a complete workflow
+type workflowFile struct {
+	Environments map[string]workflowEnvironment `json:"environments"`
 }
 
-var APIKEYSECRET_ENCODED string
-
-func getEnvs(env *env0Settings) {
+func (env *env0Settings) loadEnvs() {
 	env.ENV0_API_KEY = os.Getenv("ENV0_API_KEY")
 	env.ENV0_API_SECRET = os.Getenv("ENV0_API_SECRET")
-	env.ENV0_ORGANIZATION_ID = os.Getenv(("ENV0_ORGANIZATION_ID"))
+	env.ENV0_ORGANIZATION_ID = os.Getenv("ENV0_ORGANIZATION_ID")
 	env.ENV0_ENVIRONMENT_ID = os.Getenv("ENV0_ENVIRONMENT_ID")
-	APIKEYSECRET_ENCODED = base64.StdEncoding.EncodeToString([]byte(env0EnvVars.ENV0_API_KEY + ":" + env0EnvVars.ENV0_API_SECRET))
+	env.APIKEYSECRET_ENCODED = os.Getenv("TF_TOKEN_backend_api_env0_com")
+	if env.APIKEYSECRET_ENCODED == "" && (env.ENV0_API_SECRET == "" || env.ENV0_API_KEY == "") {
+		log.Println("Error: ENV0_API_KEY, ENV0_API_SECRET or TF_TOKEN_backend_api_env0_com not found; please remember to set either the key and secret or the token.")
+	} else if env.APIKEYSECRET_ENCODED == "" {
+		env.APIKEYSECRET_ENCODED = base64.StdEncoding.EncodeToString([]byte(env0EnvVars.ENV0_API_KEY + ":" + env0EnvVars.ENV0_API_SECRET))
+	}
 }
 
 func updateByName(index int, importVars []env0VariableToImport) {
 	log.Println("updateByName: " + importVars[index].ENV0_ENVIRONMENT_NAME + " outputkey: " + importVars[index].OutputKey) // importVars[index].ENV0_ENVIRONMENT_NAME
 	// log.Println("https://api.env0.com/environments?organizationId=" + env0EnvVars.ENV0_ORGANIZATION_ID + "&name=" + importVars[index].ENV0_ENVIRONMENT_NAME)
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments?organizationId="+env0EnvVars.ENV0_ORGANIZATION_ID+"&name="+importVars[index].ENV0_ENVIRONMENT_NAME, nil)
-	req.Header.Set("Authorization", "Basic "+APIKEYSECRET_ENCODED)
+	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, err := client.Do(req)
 	// log.Println(resp, err)
 	// log.Println(resp.Body)
@@ -119,7 +126,7 @@ func updateByName(index int, importVars []env0VariableToImport) {
 func updateById(index int, importVars []env0VariableToImport) {
 	log.Println("updateById: " + importVars[index].ENV0_ENVIRONMENT_ID + " outputkey: " + importVars[index].OutputKey)
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments/"+importVars[index].ENV0_ENVIRONMENT_ID, nil)
-	req.Header.Set("Authorization", "Basic "+APIKEYSECRET_ENCODED)
+	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, err := client.Do(req)
 	// log.Println(resp, err)
 	// log.Println(resp.Body)
@@ -147,7 +154,7 @@ func getEnvironmentIdOfParent(parentName string) string {
 	log.Printf("getEnvironmentIdOfParent: %s\n", parentName)
 
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments/"+env0EnvVars.ENV0_ENVIRONMENT_ID, nil)
-	req.Header.Set("Authorization", "Basic "+APIKEYSECRET_ENCODED)
+	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, _ := client.Do(req)
 	//log.Println("\t", resp, err)
 	//log.Println("\t", resp.Body)
@@ -165,7 +172,7 @@ func getEnvironmentIdOfParent(parentName string) string {
 	log.Println("\t Workflow Id:", environmentLog.WorkflowEnvironmentId)
 
 	req, _ = http.NewRequest("GET", "https://api.env0.com/environments/"+environmentLog.WorkflowEnvironmentId, nil)
-	req.Header.Set("Authorization", "Basic "+APIKEYSECRET_ENCODED)
+	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, _ = client.Do(req)
 	//log.Println("\t", resp, err)
 	//log.Println("\t", resp.Body)
@@ -185,6 +192,20 @@ func getEnvironmentIdOfParent(parentName string) string {
 	return workflowLog.LatestDeploymentLog.WorkflowFile.Environments[parentName].EnvironmentId
 }
 
+func newHttpClient() *http.Client {
+	return &http.Client{}
+}
+
+// GLOBAL VARIABLES
+
+var env0EnvVars env0Settings
+var importVars []env0VariableToImport
+var client *http.Client
+
+func LoadJsonFromFile(filename string, jsonObject *map[string]json.RawMessage) {
+
+}
+
 /*
 env0-import-variable-plugin takes variables configured in env0 UI and finds any
 variables matching a certain regex pattern. For those it matches, it tries to
@@ -192,39 +213,45 @@ pull the corresponding values using the env0 API keys present in the environ-
 ment.
 */
 func main() {
-	log.SetFlags(log.Lshortfile)
 
+	// Set Log Format
+	log.SetFlags(log.Lshortfile)
 	log.Println("Hello, Import Variable Plugin!")
+
+	env0EnvVars.loadEnvs()
 
 	client = newHttpClient()
 
-	getEnvs(&env0EnvVars)
+	var env0TfVars map[string]json.RawMessage
 
-	log.Println("Open env0.auto.tfvars.json")
+	// Load TF VARS FILE
+	log.Println("Reading env0.auto.tfvars.json:")
 	fi, err := os.ReadFile("env0.auto.tfvars.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("cat env0.auto.tfvars.json:\n%s\n", fi)
+	log.Printf("%s\n", fi)
 
-	log.Println("UnMarshall env0.auto.tfvars.json")
+	log.Println("Loading env0.auto.tfvars.json")
 
-	var env0TfVars map[string]json.RawMessage
-
+	// UNMARSHALL to JSON
 	err = json.Unmarshal(fi, &env0TfVars)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("parse tfvars for matching regex patterns")
-
 	for k, v := range env0TfVars {
 		switch string(v[0:2]) {
 		case "{\"":
-			log.Printf("found json: %s, need to parse: %s\n", k, v)
+			log.Printf("\tfound matching json: %s, need to parse: %s\n", k, v)
 			var jsonRef env0JSONVarByName
 			err = json.Unmarshal(v, &jsonRef)
-			log.Printf(" parsed value: name: %s, parent: %s, output: %s\n", jsonRef.ENV0_ENVIRONMENT_NAME, jsonRef.ENV0_WORKFLOW_PARENT, jsonRef.Output)
+			if err != nil {
+				log.Printf("\t\terror reading json: skipping %v: %v", k, err)
+				continue
+			}
+			log.Printf("\tparsed value: name: %s, parent: %s, output: %s\n", jsonRef.ENV0_ENVIRONMENT_NAME, jsonRef.ENV0_WORKFLOW_PARENT, jsonRef.Output)
 			if jsonRef.ENV0_WORKFLOW_PARENT != "" {
 				parentEnvId := getEnvironmentIdOfParent(jsonRef.ENV0_WORKFLOW_PARENT)
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_ID: parentEnvId, OutputKey: jsonRef.Output, OutputType: "json"})
@@ -232,13 +259,17 @@ func main() {
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: jsonRef.ENV0_ENVIRONMENT_NAME, OutputKey: jsonRef.Output, OutputType: "json"})
 			}
 		case "\"$":
-			log.Printf("found match: key: %s value: %s\n", k, v)
+			log.Printf("\tfound match key: %s value: %s\n", k, v)
 			s := strings.Split(string(v), ":")
-			log.Printf(" parsed value: %s, %s\n", s[1], s[2][:(len(s[2])-2)])
+			log.Printf("\tparsed value: %s, %s\n", s[1], s[2][:(len(s[2])-2)])
 			matchWorkflow, err := regexp.MatchString(`\"\${env0-workflow`, s[0])
+			if err != nil {
+				log.Printf("\t\terror reading workflow: skipping %v: %v", k, err)
+				continue
+			}
 			log.Println("\t", s[0])
 			if matchWorkflow {
-				log.Println("\tFetch Worfklow variable from: " + s[1] + " output: " + s[2][:len(s[2])-2])
+				log.Println("\t\tFetch Worfklow variable from: " + s[1] + " output: " + s[2][:len(s[2])-2])
 				parentEnvId := getEnvironmentIdOfParent(s[1])
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_ID: parentEnvId, OutputKey: s[2][:len(s[2])-2], OutputType: "string"})
 				continue
@@ -253,7 +284,7 @@ func main() {
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: s[1], OutputKey: s[2][:len(s[2])-2], OutputType: "string"})
 			}
 		default:
-			log.Printf("ignoring key: %s, value: %s\n", k, v[0:2])
+			log.Printf("\tskipping key: %s", k)
 		}
 	}
 

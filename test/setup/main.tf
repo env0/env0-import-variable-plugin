@@ -7,11 +7,6 @@ locals {
   }
 }
 
-variable "tags" {
-  type = map
-  default = local.tags
-}
-
 output "time" {
   value = local.time
 }
@@ -25,5 +20,5 @@ output "test_multiline" {
 }
 
 output "tags" {
-  value = var.tags
+  value = local.tags
 }

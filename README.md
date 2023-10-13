@@ -8,7 +8,17 @@ Similar to self hosted agent secrets, use this notation in the value of the terr
 * `${env0:<environment name>:<output name>}` (see note below about Environment Names restrictions)
 
 For fetching JSON output values - make sure you select JSON type for your input variable, and in the value use the following JSON schema.
-* `{"ENV0_ENVIRONMENT_NAME":<environment name>, "output": <output name>}` 
+* `{"ENV0_ENVIRONMENT_NAME":<environment name>, "output": <output name>}`
+
+
+Terraform Provider Example:
+
+```
+resource "env0_configuration_variable" "ami-id" {
+  name        = "ami-id"
+  value       = $${env0-workflow:aws-base-ami:ami-id}  \\ use an extra `$` to escape $. see https://developer.hashicorp.com/terraform/language/expressions/strings
+}
+```
 
 ## Workflows
 

@@ -4,11 +4,13 @@ inputs: {}
 run:
   exec: |
     sudo apk add go
-    git clone --branch main --single-branch https://github.com/env0/env0-import-variable-plugin
+    git clone --depth=1 --single-branch https://github.com/env0/env0-import-variable-plugin
     cd env0-import-variable-plugin
+    cat main.go
     go build -o ./bin/import-variable-plugin main.go 
     mv ./bin/import-variable-plugin /opt
     cd ..
     ls -la
     pwd
     import-variable-plugin
+    ./importVariables.sh

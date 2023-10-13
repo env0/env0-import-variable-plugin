@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -31,6 +32,7 @@ type env0Settings struct {
 // env0VariableToImport is a data structure to save what variable(s) needs to be fetched / imported.
 type env0VariableToImport struct {
 	InputKey              string
+	InputType             interface{}
 	ENV0_ENVIRONMENT_ID   string
 	ENV0_ENVIRONMENT_NAME string
 	OutputKey             string
@@ -108,6 +110,7 @@ func updateByName(index int, importVars []env0VariableToImport) {
 	if resp.StatusCode != 200 {
 		log.Fatalln(resp.Status)
 	}
+
 	// TODO: Make environmentLogs a map, and check for existing logs.
 	var environmentLog []environmentLog
 	decoder := json.NewDecoder(resp.Body)
@@ -116,6 +119,7 @@ func updateByName(index int, importVars []env0VariableToImport) {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
+		importVars[index].InputType = environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Type
 		importVars[index].GenericOutputValue = environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value
 		importVars[index].ENV0_ENVIRONMENT_ID = environmentLog[0].Id
 	}
@@ -129,6 +133,10 @@ func updateById(index int, importVars []env0VariableToImport) {
 	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, err := client.Do(req)
 
+	if resp.StatusCode != 200 {
+		log.Fatalln(resp.Status)
+	}
+
 	// TODO: Make environmentLogs a map, and check for existing logs.
 	var environmentLog environmentLog
 	decoder := json.NewDecoder(resp.Body)
@@ -137,6 +145,7 @@ func updateById(index int, importVars []env0VariableToImport) {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
+		importVars[index].InputType = environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Type
 		importVars[index].GenericOutputValue = environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value
 		importVars[index].ENV0_ENVIRONMENT_NAME = environmentLog.Name
 	}
@@ -288,7 +297,21 @@ func main() {
 		} else {
 			updateById(k, importVars)
 		}
-		OutputTFVarsJson[importVars[k].InputKey] = importVars[k].GenericOutputValue
+
+		log.Printf("InputType: %v\t", importVars[k].InputType)
+		log.Printf("OutputType: %v\n", importVars[k].OutputType)
+		switch importVars[k].InputType.(type) {
+		case string:
+			if importVars[k].OutputType == "json" {
+				OutputTFVarsJson[importVars[k].InputKey] = json.RawMessage((fmt.Sprint(importVars[k].GenericOutputValue)))
+			} else {
+				OutputTFVarsJson[importVars[k].InputKey] = importVars[k].GenericOutputValue
+			}
+		default:
+			OutputTFVarsJson[importVars[k].InputKey] = importVars[k].GenericOutputValue
+		}
+
+		//OutputTFVarsJson[importVars[k].InputKey] = importVars[k].GenericOutputValue
 	}
 
 	log.Println("ImportVars: ", importVars)

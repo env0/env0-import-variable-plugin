@@ -13,7 +13,6 @@
 # lexical order, so last file wins!
 
 ### Repeat process for Environment Variables
-jq '.' env0.env-vars.json
 
 KEYS=($(jq -rc 'keys | .[]' env0.env-vars.json))
 VALUES=($(jq -c '.[]' env0.env-vars.json))

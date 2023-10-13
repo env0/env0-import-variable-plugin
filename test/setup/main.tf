@@ -1,10 +1,15 @@
 locals {
   time = timestamp()
+  tags = {
+    a = "apple"
+    b = "banana"
+    c = "cat"
+  }
 }
 
 variable "tags" {
   type = map
-  default = { "a" : "apple, "b" : "banana", "c" : "cat" }
+  default = local.tags
 }
 
 output "time" {

@@ -3,10 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-<<<<<<< HEAD
-=======
-	"fmt"
->>>>>>> 334f4f70c021cba66ece4b7136a273da3d320915
 	"log"
 	"net/http"
 	"os"

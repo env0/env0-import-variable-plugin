@@ -7,7 +7,7 @@ output "time" {
 }
 
 output "time_json" {
-  value = jsonencode({ "time" : local.time })
+  value = jsonencode({ "time" : local.time, "a" : "apple", "b" : "banana" })
 }
 
 output "test_multiline" {

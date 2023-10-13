@@ -1,3 +1,4 @@
 .envrc
 env0.auto.tfvars.json
 env1.*
+bin/

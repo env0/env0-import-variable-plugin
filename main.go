@@ -104,8 +104,6 @@ func updateByName(index int, importVars []env0VariableToImport) {
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments?organizationId="+env0EnvVars.ENV0_ORGANIZATION_ID+"&name="+importVars[index].ENV0_ENVIRONMENT_NAME, nil)
 	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, err := client.Do(req)
-	// log.Println(resp, err)
-	// log.Println(resp.Body)
 
 	// TODO: Make environmentLogs a map, and check for existing logs.
 	var environmentLog []environmentLog
@@ -127,8 +125,6 @@ func updateById(index int, importVars []env0VariableToImport) {
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments/"+importVars[index].ENV0_ENVIRONMENT_ID, nil)
 	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, err := client.Do(req)
-	// log.Println(resp, err)
-	// log.Println(resp.Body)
 
 	// TODO: Make environmentLogs a map, and check for existing logs.
 	var environmentLog environmentLog

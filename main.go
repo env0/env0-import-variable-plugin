@@ -105,6 +105,9 @@ func updateByName(index int, importVars []env0VariableToImport) {
 	req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
 	resp, err := client.Do(req)
 
+	if resp.StatusCode != 200 {
+		log.Fatalln(resp.Status)
+	}
 	// TODO: Make environmentLogs a map, and check for existing logs.
 	var environmentLog []environmentLog
 	decoder := json.NewDecoder(resp.Body)

@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -35,8 +34,8 @@ type env0VariableToImport struct {
 	ENV0_ENVIRONMENT_ID   string
 	ENV0_ENVIRONMENT_NAME string
 	OutputKey             string
-	OutputValue           string
 	OutputType            string
+	GenericOutputValue    interface{}
 }
 
 // --- Data Structure for Logs
@@ -82,6 +81,7 @@ type workflowFile struct {
 	Environments map[string]workflowEnvironment `json:"environments"`
 }
 
+// setup environment variables
 func (env *env0Settings) loadEnvs() {
 	env.ENV0_API_KEY = os.Getenv("ENV0_API_KEY")
 	env.ENV0_API_SECRET = os.Getenv("ENV0_API_SECRET")
@@ -95,6 +95,9 @@ func (env *env0Settings) loadEnvs() {
 	}
 }
 
+// updateByName
+// gets environment details by Name, Note: Environment Names aren't necessarily unique
+// this "returns" first environment in matching Environemnt Names
 func updateByName(index int, importVars []env0VariableToImport) {
 	log.Println("updateByName: " + importVars[index].ENV0_ENVIRONMENT_NAME + " outputkey: " + importVars[index].OutputKey) // importVars[index].ENV0_ENVIRONMENT_NAME
 	// log.Println("https://api.env0.com/environments?organizationId=" + env0EnvVars.ENV0_ORGANIZATION_ID + "&name=" + importVars[index].ENV0_ENVIRONMENT_NAME)
@@ -112,17 +115,13 @@ func updateByName(index int, importVars []env0VariableToImport) {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
-		switch environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Type.(type) {
-		case string:
-			log.Printf("\tString type: Output Value: %v\n", environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
-		case json.RawMessage:
-			log.Printf("\tJSON type: Output Value: %v\n", environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
-		}
-		importVars[index].OutputValue = fmt.Sprint(environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
+		importVars[index].GenericOutputValue = environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value
 		importVars[index].ENV0_ENVIRONMENT_ID = environmentLog[0].Id
 	}
 }
 
+// updateById
+// gets environment details by envid
 func updateById(index int, importVars []env0VariableToImport) {
 	log.Println("updateById: " + importVars[index].ENV0_ENVIRONMENT_ID + " outputkey: " + importVars[index].OutputKey)
 	req, _ := http.NewRequest("GET", "https://api.env0.com/environments/"+importVars[index].ENV0_ENVIRONMENT_ID, nil)
@@ -139,17 +138,13 @@ func updateById(index int, importVars []env0VariableToImport) {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
-		switch environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Type.(type) {
-		case string:
-			log.Printf("\tString type: Output Value: %v\n", environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
-		case json.RawMessage:
-			log.Printf("\tJSON type: Output Value: %v\n", environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
-		}
-		importVars[index].OutputValue = fmt.Sprint(environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value)
+		importVars[index].GenericOutputValue = environmentLog.LatestDeploymentLog.Output[importVars[index].OutputKey].Value
 		importVars[index].ENV0_ENVIRONMENT_NAME = environmentLog.Name
 	}
 }
 
+// getEnvironmentIdOfParent
+// returns the envID of a parent in a workflow
 func getEnvironmentIdOfParent(parentName string) string {
 	log.Printf("getEnvironmentIdOfParent: %s\n", parentName)
 
@@ -201,10 +196,6 @@ func newHttpClient() *http.Client {
 var env0EnvVars env0Settings
 var importVars []env0VariableToImport
 var client *http.Client
-
-func LoadJsonFromFile(filename string, jsonObject *map[string]json.RawMessage) {
-
-}
 
 /*
 env0-import-variable-plugin takes variables configured in env0 UI and finds any
@@ -298,12 +289,7 @@ func main() {
 		} else {
 			updateById(k, importVars)
 		}
-		switch importVars[k].OutputType {
-		case "json":
-			OutputTFVarsJson[importVars[k].InputKey] = json.RawMessage(importVars[k].OutputValue)
-		default:
-			OutputTFVarsJson[importVars[k].InputKey] = importVars[k].OutputValue
-		}
+		OutputTFVarsJson[importVars[k].InputKey] = importVars[k].GenericOutputValue
 	}
 
 	log.Println("ImportVars: ", importVars)

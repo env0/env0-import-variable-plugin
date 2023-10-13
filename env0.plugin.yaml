@@ -13,4 +13,4 @@ run:
     ls -la
     pwd
     import-variable-plugin
-    ./importVariables.sh
+    ./env0-import-variable-plugin/importVariables.sh

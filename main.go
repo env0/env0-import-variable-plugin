@@ -260,7 +260,7 @@ func loadVarsFile() (map[string]json.RawMessage, map[string]json.RawMessage) {
 	sugar.Debugln("Reading env0.env-vars.json:")
 	fi, err = os.ReadFile("env0.env-vars.json")
 	if err != nil {
-		sugar.Fatal("Issue unmarshalling env-vars.json: ", err)
+		sugar.Warn("Issue unmarshalling env-vars.json: ", err)
 	}
 	sugar.Debugf("%s\n", fi)
 	sugar.Debugln("Loading env0.env-vars.json")

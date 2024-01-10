@@ -242,7 +242,7 @@ func main() {
 	log.Println("parse tfvars for matching regex patterns")
 	for k, v := range env0TfVars {
 		switch string(v[0:2]) {
-		case "{\"":
+		case "{\"ENV0_":
 			log.Printf("\tfound matching json: %s, need to parse: %s\n", k, v)
 			var jsonRef env0JSONVarByName
 			err = json.Unmarshal(v, &jsonRef)

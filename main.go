@@ -241,8 +241,8 @@ func main() {
 
 	log.Println("parse tfvars for matching regex patterns")
 	for k, v := range env0TfVars {
-		switch string(v[0:2]) {
-		case "{\"ENV0_":
+		switch string(v[0:5]) {
+		case "{\"ENV":
 			log.Printf("\tfound matching json: %s, need to parse: %s\n", k, v)
 			var jsonRef env0JSONVarByName
 			err = json.Unmarshal(v, &jsonRef)
@@ -257,7 +257,7 @@ func main() {
 			} else {
 				importVars = append(importVars, env0VariableToImport{InputKey: k, ENV0_ENVIRONMENT_NAME: jsonRef.ENV0_ENVIRONMENT_NAME, OutputKey: jsonRef.Output, OutputType: "json"})
 			}
-		case "\"$":
+		case "\"${en":
 			log.Printf("\tfound match key: %s value: %s\n", k, v)
 			s := strings.Split(string(v), ":")
 			log.Printf("\tparsed value: %s, %s\n", s[1], s[2][:(len(s[2])-2)])
@@ -266,7 +266,6 @@ func main() {
 				log.Printf("\t\terror reading workflow: skipping %v: %v", k, err)
 				continue
 			}
-			log.Println("\t", s[0])
 			if matchWorkflow {
 				log.Println("\t\tFetch Worfklow variable from: " + s[1] + " output: " + s[2][:len(s[2])-2])
 				parentEnvId := getEnvironmentIdOfParent(s[1])

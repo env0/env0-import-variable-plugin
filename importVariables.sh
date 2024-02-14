@@ -14,6 +14,11 @@
 
 ### Repeat process for Environment Variables
 
+if [[ ! -e "env0.env-vars.json" ]]; then
+  echo "No Environment Variables defined in the UI, skipping import for Environment Variables."
+  exit 0
+fi
+
 KEYS=($(jq -rc 'keys_unsorted | .[]' env0.env-vars.json))
 VALUES=($(jq -c '.[]' env0.env-vars.json))
 LENGTH=$(jq 'length' env0.env-vars.json)

@@ -5,7 +5,16 @@ deploy:
     setupVariables:
       after:
         - name: Import Variables
-          use: https://github.com/env0/env0-import-variable-plugin
+          run: |
+            sudo apk add go
+            git clone --depth=1 --single-branch https://github.com/env0/env0-import-variable-plugin --branch ${REF:-main}
+            cd env0-import-variable-plugin
+            cat main.go
+            go build -o ./bin/import-variable-plugin main.go 
+            mv ./bin/import-variable-plugin /opt
+            cd $ENV0_TEMPLATE_DIR
+            import-variable-plugin
+            ./env0-import-variable-plugin/importVariables.sh
     terraformOutput:
       after:
         - name: Test Outputs

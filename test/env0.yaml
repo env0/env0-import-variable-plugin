@@ -7,7 +7,7 @@ deploy:
         - name: Import Variables
           run: |
             sudo apk add go
-            git clone --depth=1 --single-branch https://github.com/env0/env0-import-variable-plugin@${REF:-main}
+            git clone --depth=1 --single-branch https://github.com/env0/env0-import-variable-plugin --branch ${REF:-main}
             cd env0-import-variable-plugin
             cat main.go
             go build -o ./bin/import-variable-plugin main.go 

@@ -5,7 +5,7 @@ deploy:
     setupVariables:
       after:
         - name: Import Variables
-          use: https://github.com/env0/env0-import-variable-plugin
+          use: https://github.com/env0/env0-import-variable-plugin@${REF:-main}
     terraformOutput:
       after:
         - name: Test Outputs

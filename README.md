@@ -70,7 +70,7 @@ deploy:
     setupVariables:
       after:
         - name: Import Variables # The name that will be presented in the UI for this step
-          use: https://github.com/env0/env0-import-variable-plugin@0.4.0
+          use: https://github.com/env0/env0-import-variable-plugin@0.4.1
           inputs: {}
 
 ```

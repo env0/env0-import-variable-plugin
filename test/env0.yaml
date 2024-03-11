@@ -14,7 +14,7 @@ deploy:
             mv ./bin/import-variable-plugin /opt
             cd $ENV0_TEMPLATE_DIR
             import-variable-plugin
-            ./env0-import-variable-plugin/importVariables.sh
+            $ENV0_PLUGIN_PATH/importVariables.sh
     terraformOutput:
       after:
         - name: Test Outputs

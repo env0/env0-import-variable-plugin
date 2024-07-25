@@ -20,6 +20,17 @@ type env0JSONVarByName struct {
 	Output                string
 }
 
+type env0JSONComplex struct {
+	COMPLEX []env0JSONComplexItem
+}
+
+type env0JSONComplexItem struct {
+	EnvironmentName string
+	Output          string
+	Variable        string
+	Data            map[string]interface{}
+}
+
 // env0Settings are used to pull and store the environment variables defined in the runner
 type env0Settings struct {
 	ENV0_ORGANIZATION_ID string
@@ -35,6 +46,7 @@ type env0VariableToImport struct {
 	InputType             interface{}
 	ENV0_ENVIRONMENT_ID   string
 	ENV0_ENVIRONMENT_NAME string
+	Complex               env0JSONComplex
 	OutputKey             string
 	OutputType            string
 	GenericOutputValue    interface{}
@@ -95,6 +107,55 @@ func (env *env0Settings) loadEnvs() {
 	} else if env.APIKEYSECRET_ENCODED == "" {
 		env.APIKEYSECRET_ENCODED = base64.StdEncoding.EncodeToString([]byte(env0EnvVars.ENV0_API_KEY + ":" + env0EnvVars.ENV0_API_SECRET))
 	}
+}
+
+// updateComplex
+// gets environment details by Name, Note: Environment Names aren't necessarily unique
+// this "returns" first environment in matching Environemnt Names
+func updateComplex(index int, importVars []env0VariableToImport) {
+	for _, item := range importVars[index].Complex.COMPLEX {
+		log.Println("updateByName: " + item.EnvironmentName + " outputkey: " + item.Output)
+		// log.Println("https://api.env0.com/environments?organizationId=" + env0EnvVars.ENV0_ORGANIZATION_ID + "&name=" + importVars[index].ENV0_ENVIRONMENT_NAME)
+		req, _ := http.NewRequest("GET", "https://api.env0.com/environments?organizationId="+env0EnvVars.ENV0_ORGANIZATION_ID+"&name="+item.EnvironmentName, nil)
+		req.Header.Set("Authorization", "Basic "+env0EnvVars.APIKEYSECRET_ENCODED)
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatalln(err)
+		} else if resp.StatusCode != 200 {
+			log.Fatalln(resp.Status)
+		}
+	
+		// TODO: Make environmentLogs a map, and check for existing logs.
+		var environmentLog []environmentLog
+		decoder := json.NewDecoder(resp.Body)
+		err = decoder.Decode(&environmentLog)
+		// err = json.Unmarshal(resp.Body, &v)
+		if err != nil {
+			log.Fatalln(err)
+		} else {
+			importVars[index].InputType = environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Type
+			
+			items := []map[string]interface{}{ 
+				item.Data, 
+				{
+					item.Variable: environmentLog[0].LatestDeploymentLog.Output[importVars[index].OutputKey].Value,
+				},
+			}
+			importVars[index].GenericOutputValue = mergeMaps(items...)
+			importVars[index].ENV0_ENVIRONMENT_ID = environmentLog[0].Id
+		}
+		
+	}
+}
+
+func mergeMaps(maps ...map[string]interface{}) map[string]interface{} {
+    result := make(map[string]interface{})
+    for _, m := range maps {
+        for k, v := range m {
+            result[k] = v
+        }
+    }
+    return result
 }
 
 // updateByName
@@ -242,6 +303,18 @@ func main() {
 	log.Println("parse tfvars for matching regex patterns")
 	for k, v := range env0TfVars {
 		switch string(v[0:5]) {
+		case "{\"COMP}":
+			var jsonRef env0JSONComplex
+			err = json.Unmarshal(v, &jsonRef)
+			if err != nil {
+				log.Printf("\t\terror reading json: skipping %v: %v", k, err)
+				continue
+			}
+
+			for _, v := range jsonRef.COMPLEX {
+				importVars = append(importVars, env0VariableToImport{InputKey: k, Complex: jsonRef, OutputKey: v.Output, OutputType: "json"})
+			}
+
 		case "{\"ENV":
 			log.Printf("\tfound matching json: %s, need to parse: %s\n", k, v)
 			var jsonRef env0JSONVarByName
@@ -291,7 +364,9 @@ func main() {
 	OutputTFVarsJson := make(map[string]interface{})
 
 	for k, v := range importVars {
-		if v.ENV0_ENVIRONMENT_ID == "" {
+		if len(v.Complex.COMPLEX) > 0 {
+			updateComplex(k, importVars)
+		} else if v.ENV0_ENVIRONMENT_ID == "" {
 			updateByName(k, importVars)
 		} else {
 			updateById(k, importVars)

@@ -20,7 +20,7 @@ if [[ ! -e "env0.env-vars.json" ]]; then
 fi
 
 KEYS=($(jq -rc 'keys_unsorted | .[]' env0.env-vars.json))
-VALUES=($(jq -c '.[]' env0.env-vars.json))
+mapfile -t VALUES < <(jq -c '.[]' env0.env-vars.json)
 LENGTH=$(jq 'length' env0.env-vars.json)
 
 UUID_REGEX='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'

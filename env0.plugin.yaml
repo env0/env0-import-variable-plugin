@@ -56,7 +56,8 @@ run:
     build_from_source() {
       sudo apk add go
       rm -rf env0-import-variable-plugin
-      git clone --depth=1 --single-branch ${PLUGIN_VERSION:+--branch "$PLUGIN_VERSION"} "$PLUGIN_REPO"
+      git clone --depth=1 --single-branch ${PLUGIN_VERSION:+--branch "$PLUGIN_VERSION"} "$PLUGIN_REPO" ||
+        git clone --depth=1 --single-branch "$PLUGIN_REPO"
       cd env0-import-variable-plugin
       go build -o ./bin/import-variable-plugin main.go
       mv ./bin/import-variable-plugin /opt

@@ -5,9 +5,7 @@ deploy:
     setupVariables:
       after:
         - name: Import Variables
-          use: https://github.com/env0/env0-import-variable-plugin@claude/modest-maxwell-462744
-          inputs:
-            version: 0.0.0-missing
+          use: https://github.com/env0/env0-import-variable-plugin
     terraformOutput:
       after:
         - name: Test Outputs

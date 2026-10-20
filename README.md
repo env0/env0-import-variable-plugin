@@ -57,7 +57,13 @@ The plugin uses the env0 API to fetch the output values from another environment
 
 ## Inputs
 
-N/A
+* `version` (optional): The release tag of the plugin binary to use, for example `0.5.0`. If you do not set it, the plugin uses the latest release.
+
+## How the plugin installs
+
+The plugin downloads a prebuilt binary for the agent architecture (`amd64` or `arm64`) from the [GitHub releases](https://github.com/env0/env0-import-variable-plugin/releases) and verifies its SHA-256 checksum. It does not install Go. If the download fails, the plugin installs Go and builds the binary from source.
+
+Use `use: https://github.com/env0/env0-import-variable-plugin` in your custom flow to get this behavior. If you copied the old plugin script into your `env0.yaml`, replace it with `use:`.
 
 ## Example Usage
 
@@ -70,7 +76,7 @@ deploy:
     terraformPlan:
       before:
         - name: Import Variables # The name that will be presented in the UI for this step
-          use: https://github.com/env0/env0-import-variable-plugin@0.4.4
+          use: https://github.com/env0/env0-import-variable-plugin
           inputs: {}
 
 ```

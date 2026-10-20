@@ -1,16 +1,72 @@
 name: Variable Helper
 icon: https://assets-global.website-files.com/5ceab5395d0f478e169de7c0/5fdf4acfdb893538adabd1ab_Code%20automation%402x.png
-inputs: {}
+inputs:
+  version:
+    description: Release tag of the plugin binary to use (for example 0.5.0). Defaults to the latest release.
+    required: false
 run:
   exec: |
-    sudo apk add go
-    rm -rf env0-import-variable-plugin
-    git clone --depth=1 --single-branch https://github.com/env0/env0-import-variable-plugin
-    cd env0-import-variable-plugin
-    #cat main.go
-    go build -o ./bin/import-variable-plugin main.go 
-    mv ./bin/import-variable-plugin /opt
-    mv ./importVariables.sh /opt/importEnvVariables
+    PLUGIN_REPO=https://github.com/env0/env0-import-variable-plugin
+    PLUGIN_VERSION='${inputs.version}'
+    if [[ "$PLUGIN_VERSION" == *'{inputs.'* ]]; then
+      PLUGIN_VERSION=""
+    fi
+
+    plugin_arch() {
+      case "$(uname -m)" in
+        x86_64|amd64) echo amd64 ;;
+        aarch64|arm64) echo arm64 ;;
+        *) return 1 ;;
+      esac
+    }
+
+    release_url() {
+      if [[ -n "$PLUGIN_VERSION" ]]; then
+        echo "$PLUGIN_REPO/releases/download/$PLUGIN_VERSION/$1"
+      else
+        echo "$PLUGIN_REPO/releases/latest/download/$1"
+      fi
+    }
+
+    verify_checksum() {
+      local expected actual
+      expected="$(awk -v name="$2" '$2 == name { print $1 }' "$1/checksums.txt")"
+      actual="$(sha256sum "$1/$2" | awk '{ print $1 }')"
+      [[ -n "$expected" && "$expected" == "$actual" ]]
+    }
+
+    install_prebuilt() {
+      local arch binary download_dir
+      arch="$(plugin_arch)" || return 1
+      binary="import-variable-plugin_linux_$arch"
+      download_dir="$(mktemp -d)"
+      curl -fsSL --retry 3 -o "$download_dir/$binary" "$(release_url "$binary")" &&
+        curl -fsSL --retry 3 -o "$download_dir/importVariables.sh" "$(release_url importVariables.sh)" &&
+        curl -fsSL --retry 3 -o "$download_dir/checksums.txt" "$(release_url checksums.txt)" &&
+        verify_checksum "$download_dir" "$binary" &&
+        verify_checksum "$download_dir" importVariables.sh &&
+        chmod +x "$download_dir/$binary" "$download_dir/importVariables.sh" &&
+        mv "$download_dir/$binary" /opt/import-variable-plugin &&
+        mv "$download_dir/importVariables.sh" /opt/importEnvVariables
+      local result=$?
+      rm -rf "$download_dir"
+      return $result
+    }
+
+    build_from_source() {
+      sudo apk add go
+      rm -rf env0-import-variable-plugin
+      git clone --depth=1 --single-branch ${PLUGIN_VERSION:+--branch "$PLUGIN_VERSION"} "$PLUGIN_REPO"
+      cd env0-import-variable-plugin
+      go build -o ./bin/import-variable-plugin main.go
+      mv ./bin/import-variable-plugin /opt
+      mv ./importVariables.sh /opt/importEnvVariables
+    }
+
+    if ! install_prebuilt; then
+      echo "Could not download the prebuilt plugin binary, building it from source"
+      build_from_source
+    fi
     cd $ENV0_TEMPLATE_DIR
     import-variable-plugin
     importEnvVariables

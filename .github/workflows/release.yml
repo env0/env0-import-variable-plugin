@@ -28,6 +28,19 @@ jobs:
           ref: ${{ inputs.tag }}
           persist-credentials: false
 
+      - name: Check the tag matches the plugin default version
+        if: github.event_name != 'pull_request'
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          default_version="$(sed -n 's/^ *PLUGIN_DEFAULT_VERSION=//p' env0.plugin.yaml)"
+          if [[ "$TAG" == *-* ]]; then
+            echo "Prerelease $TAG, PLUGIN_DEFAULT_VERSION is $default_version"
+          elif [[ "$TAG" != "$default_version" ]]; then
+            echo "::error::Tag $TAG does not match PLUGIN_DEFAULT_VERSION=$default_version in env0.plugin.yaml"
+            exit 1
+          fi
+
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod

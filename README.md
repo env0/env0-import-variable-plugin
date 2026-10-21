@@ -57,7 +57,7 @@ The plugin uses the env0 API to fetch the output values from another environment
 
 ## Inputs
 
-* `version` (optional): The release tag of the plugin binary to use, for example `0.5.0`. If you do not set it, the plugin uses the latest release.
+* `version` (optional): The release tag of the plugin binary to use, for example `0.5.0`. If you do not set it, the plugin uses the release that matches the plugin version in `use:` (for example `@0.5.0` uses the `0.5.0` binary).
 
 ## How the plugin installs
 

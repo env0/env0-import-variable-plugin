@@ -2,14 +2,15 @@ name: Variable Helper
 icon: https://assets-global.website-files.com/5ceab5395d0f478e169de7c0/5fdf4acfdb893538adabd1ab_Code%20automation%402x.png
 inputs:
   version:
-    description: Release tag of the plugin binary to use (for example 0.5.0). Defaults to the latest release.
+    description: Release tag of the plugin binary to use (for example 0.5.0). Defaults to the release that matches this plugin version.
     required: false
 run:
   exec: |
     PLUGIN_REPO=https://github.com/env0/env0-import-variable-plugin
+    PLUGIN_DEFAULT_VERSION=0.5.0
     PLUGIN_VERSION='${inputs.version}'
-    if [[ "$PLUGIN_VERSION" == *'{inputs.'* ]]; then
-      PLUGIN_VERSION=""
+    if [[ -z "$PLUGIN_VERSION" || "$PLUGIN_VERSION" == *'{inputs.'* ]]; then
+      PLUGIN_VERSION="$PLUGIN_DEFAULT_VERSION"
     fi
 
     plugin_arch() {
@@ -21,11 +22,7 @@ run:
     }
 
     release_url() {
-      if [[ -n "$PLUGIN_VERSION" ]]; then
-        echo "$PLUGIN_REPO/releases/download/$PLUGIN_VERSION/$1"
-      else
-        echo "$PLUGIN_REPO/releases/latest/download/$1"
-      fi
+      echo "$PLUGIN_REPO/releases/download/$PLUGIN_VERSION/$1"
     }
 
     verify_checksum() {
@@ -56,7 +53,7 @@ run:
     build_from_source() {
       sudo apk add go
       rm -rf env0-import-variable-plugin
-      git clone --depth=1 --single-branch ${PLUGIN_VERSION:+--branch "$PLUGIN_VERSION"} "$PLUGIN_REPO" ||
+      git clone --depth=1 --single-branch --branch "$PLUGIN_VERSION" "$PLUGIN_REPO" ||
         git clone --depth=1 --single-branch "$PLUGIN_REPO"
       cd env0-import-variable-plugin
       go build -o ./bin/import-variable-plugin main.go

@@ -28,6 +28,25 @@
         "golang"
       ],
       "rangeStrategy": "bump"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchDepNames": [
+        "env0/env0-import-variable-plugin"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "minimumReleaseAge": "0 days",
+      "schedule": [
+        "at any time"
+      ],
+      "commitMessagePrefix": "chore:",
+      "commitMessageAction": "Update",
+      "commitMessageTopic": "README plugin version",
+      "commitMessageExtra": "to {{newVersion}}",
+      "ignoreUnstable": true
     }
   ],
   "customManagers": [
@@ -41,6 +60,19 @@
         "docker run [^\\n]*?\\s(?<depName>[a-z0-9][a-z0-9._/-]*):(?<currentValue>\\d[\\w.-]*)\\s"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Update the plugin version in the README example",
+      "managerFilePatterns": [
+        "/^README\\.md$/"
+      ],
+      "matchStrings": [
+        "github\\.com/env0/env0-import-variable-plugin@(?<currentValue>[^\\s`]+)"
+      ],
+      "depNameTemplate": "env0/env0-import-variable-plugin",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
     }
   ]
 }

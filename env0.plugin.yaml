@@ -37,9 +37,9 @@ run:
       arch="$(plugin_arch)" || return 1
       binary="import-variable-plugin_linux_$arch"
       download_dir="$(mktemp -d)"
-      curl -fsSL --retry 3 -o "$download_dir/$binary" "$(release_url "$binary")" &&
-        curl -fsSL --retry 3 -o "$download_dir/importVariables.sh" "$(release_url importVariables.sh)" &&
-        curl -fsSL --retry 3 -o "$download_dir/checksums.txt" "$(release_url checksums.txt)" &&
+      curl -fsSL --retry 3 --connect-timeout 10 --max-time 120 -o "$download_dir/$binary" "$(release_url "$binary")" &&
+        curl -fsSL --retry 3 --connect-timeout 10 --max-time 120 -o "$download_dir/importVariables.sh" "$(release_url importVariables.sh)" &&
+        curl -fsSL --retry 3 --connect-timeout 10 --max-time 120 -o "$download_dir/checksums.txt" "$(release_url checksums.txt)" &&
         verify_checksum "$download_dir" "$binary" &&
         verify_checksum "$download_dir" importVariables.sh &&
         chmod +x "$download_dir/$binary" "$download_dir/importVariables.sh" &&

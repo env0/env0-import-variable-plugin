@@ -27,3 +27,12 @@ jobs:
 
       - name: Check plugin script syntax
         run: yq '.run.exec' env0.plugin.yaml | bash -n
+
+      - name: Check the README uses the plugin default version
+        run: |
+          default_version="$(sed -n 's/^ *PLUGIN_DEFAULT_VERSION=//p' env0.plugin.yaml)"
+          readme_versions="$(grep -oE 'env0-import-variable-plugin@[0-9][0-9A-Za-z.-]*' README.md | cut -d@ -f2 | sort -u | paste -sd ' ' -)"
+          if [[ "$readme_versions" != "$default_version" ]]; then
+            echo "::error file=README.md::README pins '${readme_versions}', but PLUGIN_DEFAULT_VERSION is '$default_version'"
+            exit 1
+          fi

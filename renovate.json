@@ -27,7 +27,26 @@
       "matchDepNames": [
         "go"
       ],
+      "matchDepTypes": [
+        "golang"
+      ],
       "enabled": false
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepNames": [
+        "go"
+      ],
+      "matchDepTypes": [
+        "toolchain"
+      ],
+      "groupName": "Go toolchain",
+      "minimumReleaseAge": "0 days",
+      "schedule": [
+        "at any time"
+      ]
     }
   ]
 }

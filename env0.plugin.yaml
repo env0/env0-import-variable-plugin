@@ -7,7 +7,7 @@ inputs:
 run:
   exec: |
     PLUGIN_REPO=https://github.com/env0/env0-import-variable-plugin
-    PLUGIN_DEFAULT_VERSION=0.5.0
+    PLUGIN_DEFAULT_VERSION=0.5.1
     PLUGIN_VERSION='${inputs.version}'
     if [[ -z "$PLUGIN_VERSION" || "$PLUGIN_VERSION" == *'{inputs.'* ]]; then
       PLUGIN_VERSION="$PLUGIN_DEFAULT_VERSION"

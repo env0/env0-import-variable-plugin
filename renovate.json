@@ -24,13 +24,23 @@
       "matchManagers": [
         "gomod"
       ],
-      "matchDepNames": [
-        "go"
-      ],
       "matchDepTypes": [
         "golang"
       ],
-      "enabled": false
+      "rangeStrategy": "bump"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Docker images used in workflow run scripts",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "docker run [^\\n]*?\\s(?<depName>[a-z0-9][a-z0-9._/-]*):(?<currentValue>\\d[\\w.-]*)\\s"
+      ],
+      "datasourceTemplate": "docker"
     }
   ]
 }

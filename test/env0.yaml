@@ -5,7 +5,8 @@ deploy:
     setupVariables:
       after:
         - name: Import Variables
-          use: https://github.com/env0/env0-import-variable-plugin
+          run: |
+            sed -n '/^  exec: |$/,$p' "$ENV0_ROOT_DIR/env0.plugin.yaml" | tail -n +2 | sed 's/^    //' | bash
     terraformOutput:
       after:
         - name: Test Outputs

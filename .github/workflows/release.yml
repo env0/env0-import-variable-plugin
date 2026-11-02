@@ -95,7 +95,7 @@ jobs:
         working-directory: dist
         run: |
           chmod +x "import-variable-plugin_linux_${{ matrix.arch }}"
-          docker run --rm -v "$PWD:/dist:ro" -w /tmp alpine:3.22 "/dist/import-variable-plugin_linux_${{ matrix.arch }}" > output.txt 2>&1 || true
+          docker run --rm -v "$PWD:/dist:ro" -w /tmp alpine:3.24 "/dist/import-variable-plugin_linux_${{ matrix.arch }}" > output.txt 2>&1 || true
           cat output.txt
           grep -q "Hello, Import Variable Plugin!" output.txt
 
